@@ -53,23 +53,33 @@ const App = {
         document.getElementById('search-input').addEventListener('input', (e) => this.handleSearch(e.target.value));
         document.getElementById('settings-btn').addEventListener('click', () => this.showScreen('settings-screen'));
 
-        // パスワード詳細
+        // パスワード詳細/編集 (統合)
         document.getElementById('detail-back-btn').addEventListener('click', () => this.showScreen('list-screen'));
-        document.getElementById('toggle-detail-password').addEventListener('click', () => this.toggleDetailPassword());
-        document.getElementById('edit-btn').addEventListener('click', () => this.showEditScreen());
+        document.getElementById('detail-form').addEventListener('submit', (e) => this.handleSave(e));
+        document.getElementById('toggle-detail-password').addEventListener('click', () => this.togglePasswordVisibility('detail-password'));
+
+        // パスワード生成 (新規時のみ)
+        document.getElementById('generate-password-btn').addEventListener('click', () => this.generatePassword());
+        document.getElementById('detail-password').addEventListener('input', (e) => this.updateStrengthIndicator(e.target.value));
+
+        // カスタムフィールド追加
+        document.getElementById('add-custom-field-btn').addEventListener('click', () => this.addCustomFieldInput());
+
+        // 削除ボタン
         document.getElementById('delete-btn').addEventListener('click', () => this.showDeleteModal());
 
         // コピーボタン
         document.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.handleCopy(e.target.closest('.copy-btn').dataset.field));
-        });
+            btn.addEventListener('click', (e) => {
+                const field = e.target.closest('.copy-btn').dataset.field;
+                let value = '';
+                if (field === 'email') value = document.getElementById('detail-email').value;
+                if (field === 'username') value = document.getElementById('detail-username').value;
+                if (field === 'password') value = document.getElementById('detail-password').value;
 
-        // 編集画面
-        document.getElementById('edit-back-btn').addEventListener('click', () => this.handleEditBack());
-        document.getElementById('edit-form').addEventListener('submit', (e) => this.handleSave(e));
-        document.getElementById('toggle-edit-password').addEventListener('click', () => this.togglePasswordVisibility('edit-password'));
-        document.getElementById('generate-password-btn').addEventListener('click', () => this.generatePassword());
-        document.getElementById('edit-password').addEventListener('input', (e) => this.updateStrengthIndicator(e.target.value));
+                if (value) this.copyToClipboard(value);
+            });
+        });
 
         // 設定画面
         document.getElementById('settings-back-btn').addEventListener('click', () => this.showScreen('list-screen'));
@@ -87,7 +97,6 @@ const App = {
         // 削除モーダル
         document.getElementById('cancel-delete').addEventListener('click', () => this.hideDeleteModal());
         document.getElementById('confirm-delete').addEventListener('click', () => this.handleDelete());
-
     },
 
     /**
@@ -262,75 +271,61 @@ const App = {
     },
 
     /**
-     * パスワード詳細を表示
+     * パスワード詳細編集画面を表示
      */
     showDetail(id) {
         const password = this.passwords.find(p => p.id === id);
         if (!password) return;
 
         this.currentPasswordId = id;
+        this.editMode = true; // 詳細表示 = 編集モード
 
-        document.getElementById('detail-service-name').textContent = password.service;
-        document.getElementById('detail-icon').textContent = password.service.charAt(0).toUpperCase();
-        document.getElementById('detail-service').textContent = password.service;
-        document.getElementById('detail-username').textContent = password.username;
-        document.getElementById('detail-password').textContent = '••••••••';
-        document.getElementById('detail-password').dataset.value = password.password;
-        document.getElementById('detail-password').dataset.visible = 'false';
+        document.getElementById('detail-title').textContent = '詳細 / 編集';
+        document.getElementById('detail-form').reset();
 
-        // メールアドレス
-        const emailField = document.getElementById('detail-email-field');
-        if (password.email) {
-            emailField.style.display = 'flex';
-            document.getElementById('detail-email').textContent = password.email;
-        } else {
-            emailField.style.display = 'none';
-        }
+        // 値をセット
+        document.getElementById('detail-service').value = password.service;
+        document.getElementById('detail-email').value = password.email || '';
+        document.getElementById('detail-username').value = password.username;
+        document.getElementById('detail-password').value = password.password;
+        document.getElementById('detail-memo').value = password.memo || '';
 
-        // メモ
-        const memoField = document.getElementById('detail-memo-field');
-        if (password.memo) {
-            memoField.style.display = 'flex';
-            document.getElementById('detail-memo').textContent = password.memo;
-        } else {
-            memoField.style.display = 'none';
+        this.updateStrengthIndicator(password.password);
+
+        // ボタン制御
+        document.getElementById('delete-btn').style.display = 'block';
+        document.getElementById('generate-password-btn').style.display = 'none'; // 新規ではないので非表示
+
+        // カスタムフィールド
+        const customFieldsContainer = document.getElementById('detail-custom-fields');
+        customFieldsContainer.innerHTML = '';
+        if (password.customFields && Array.isArray(password.customFields)) {
+            password.customFields.forEach(field => this.addCustomFieldInput(field.label, field.value));
         }
 
         this.showScreen('detail-screen');
     },
 
     /**
-     * パスワードの表示/非表示を切り替え
+     * パスワード表示/非表示を切り替え
      */
-    toggleDetailPassword() {
-        const el = document.getElementById('detail-password');
-        const isVisible = el.dataset.visible === 'true';
-
-        if (isVisible) {
-            el.textContent = '••••••••';
-            el.dataset.visible = 'false';
-        } else {
-            el.textContent = el.dataset.value;
-            el.dataset.visible = 'true';
-        }
+    togglePasswordVisibility(inputId) {
+        const input = document.getElementById(inputId);
+        input.type = input.type === 'password' ? 'text' : 'password';
     },
 
     /**
      * コピー処理
      */
     async handleCopy(field, targetId = null) {
+        // handleCopyの実体はcopyToClipboardに統合し、一覧用の特別処理のみ残す
+        // ここでは一覧画面からの呼び出し用
         const id = targetId !== null ? targetId : this.currentPasswordId;
         const password = this.passwords.find(p => p.id === id);
         if (!password) return;
 
         let value;
         switch (field) {
-            case 'email':
-                value = password.email;
-                break;
-            case 'username':
-                value = password.username;
-                break;
             case 'password':
                 value = password.password;
                 break;
@@ -338,65 +333,28 @@ const App = {
                 return;
         }
 
-        try {
-            await navigator.clipboard.writeText(value);
-            this.showToast('クリップボードにコピーしました');
-
-            // 10秒後にクリアする警告
-            setTimeout(() => {
-                this.showToast('セキュリティのため、クリップボードをクリアしてください', 'warning');
-            }, 10000);
-
-        } catch (error) {
-            console.error('コピーエラー:', error);
-            this.showToast('コピーに失敗しました', 'error');
-        }
+        this.copyToClipboard(value);
     },
 
     /**
-     * 追加画面を表示
+     * 追加画面を表示 (詳細画面を使い回す)
      */
     showAddScreen() {
         this.editMode = false;
         this.currentPasswordId = null;
 
-        document.getElementById('edit-title').textContent = 'パスワードを追加';
-        document.getElementById('edit-form').reset();
+        document.getElementById('detail-title').textContent = 'パスワードを追加';
+        document.getElementById('detail-form').reset();
         this.updateStrengthIndicator('');
 
-        this.showScreen('edit-screen');
-    },
+        // ボタン制御
+        document.getElementById('delete-btn').style.display = 'none'; // 新規なので削除ボタンは不要
+        document.getElementById('generate-password-btn').style.display = 'block'; // 新規なので生成ボタンを表示
 
-    /**
-     * 編集画面を表示
-     */
-    showEditScreen() {
-        const password = this.passwords.find(p => p.id === this.currentPasswordId);
-        if (!password) return;
+        // カスタムフィールドクリア
+        document.getElementById('detail-custom-fields').innerHTML = '';
 
-        this.editMode = true;
-
-        document.getElementById('edit-title').textContent = 'パスワードを編集';
-        document.getElementById('edit-service').value = password.service;
-        document.getElementById('edit-email').value = password.email || '';
-        document.getElementById('edit-username').value = password.username;
-        document.getElementById('edit-password').value = password.password;
-        document.getElementById('edit-memo').value = password.memo || '';
-
-        this.updateStrengthIndicator(password.password);
-
-        this.showScreen('edit-screen');
-    },
-
-    /**
-     * 編集画面から戻る
-     */
-    handleEditBack() {
-        if (this.editMode) {
-            this.showScreen('detail-screen');
-        } else {
-            this.showScreen('list-screen');
-        }
+        this.showScreen('detail-screen');
     },
 
     /**
@@ -406,17 +364,18 @@ const App = {
         e.preventDefault();
 
         const data = {
-            service: document.getElementById('edit-service').value.trim(),
-            email: document.getElementById('edit-email').value.trim(),
-            username: document.getElementById('edit-username').value.trim(),
-            password: document.getElementById('edit-password').value,
-            memo: document.getElementById('edit-memo').value.trim()
+            service: document.getElementById('detail-service').value.trim(),
+            email: document.getElementById('detail-email').value.trim(),
+            username: document.getElementById('detail-username').value.trim(),
+            password: document.getElementById('detail-password').value,
+            customFields: this.collectCustomFields(),
+            memo: document.getElementById('detail-memo').value.trim()
         };
 
         try {
             const encrypted = await CryptoUtils.encrypt(data, this.encryptionKey);
 
-            if (this.editMode) {
+            if (this.editMode && this.currentPasswordId) {
                 // 更新
                 await Storage.updatePassword(this.currentPasswordId, encrypted);
 
@@ -426,7 +385,6 @@ const App = {
                 }
 
                 this.showToast('更新しました');
-                this.showDetail(this.currentPasswordId);
 
             } else {
                 // 新規追加
@@ -449,7 +407,7 @@ const App = {
      */
     generatePassword() {
         const password = PasswordGenerator.generate({ length: 16 });
-        const input = document.getElementById('edit-password');
+        const input = document.getElementById('detail-password');
         input.value = password;
         input.type = 'text'; // 生成されたパスワードを表示
         this.updateStrengthIndicator(password);
@@ -824,6 +782,59 @@ const App = {
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+    },
+
+    /**
+     * カスタムフィールド入力欄を追加
+     */
+    addCustomFieldInput(label = '', value = '') {
+        const container = document.getElementById('detail-custom-fields');
+        const row = document.createElement('div');
+        row.className = 'custom-field-row';
+        row.innerHTML = `
+            <div class="custom-field-inputs">
+                <input type="text" class="input-field custom-field-label" placeholder="項目名 (例: API Key)" value="${this.escapeHtml(label)}" required>
+                <input type="text" class="input-field custom-field-value" placeholder="値" value="${this.escapeHtml(value)}" required>
+            </div>
+            <button type="button" class="remove-field-btn" title="削除">🗑️</button>
+        `;
+
+        row.querySelector('.remove-field-btn').addEventListener('click', () => {
+            row.remove();
+        });
+
+        container.appendChild(row);
+    },
+
+    /**
+     * カスタムフィールドの値を収集
+     */
+    collectCustomFields() {
+        const fields = [];
+        document.querySelectorAll('#detail-custom-fields .custom-field-row').forEach(row => {
+            const label = row.querySelector('.custom-field-label').value.trim();
+            const value = row.querySelector('.custom-field-value').value.trim();
+            if (label && value) {
+                fields.push({ label, value });
+            }
+        });
+        return fields;
+    },
+
+    /**
+     * クリップボードにコピー (汎用)
+     */
+    async copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            this.showToast('クリップボードにコピーしました');
+            setTimeout(() => {
+                this.showToast('セキュリティのため、クリップボードをクリアしてください', 'warning');
+            }, 10000);
+        } catch (error) {
+            console.error('コピーエラー:', error);
+            this.showToast('コピーに失敗しました', 'error');
+        }
     },
 
     /**

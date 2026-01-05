@@ -82,97 +82,50 @@
       <button class="fab" id="add-btn" title="パスワードを追加">＋</button>
     </section>
 
-    <!-- パスワード詳細画面 -->
+    <!-- パスワード詳細/編集画面 (統合) -->
     <section id="detail-screen" class="screen">
       <div class="header">
         <button class="back-btn" id="detail-back-btn">←</button>
         <div>
-          <h1 class="header-title" id="detail-service-name">サービス名</h1>
+          <h1 class="header-title" id="detail-title">詳細</h1>
         </div>
       </div>
 
-      <div class="glass-card">
-        <div class="detail-header">
-          <div class="detail-icon" id="detail-icon">G</div>
-        </div>
-
-        <div class="detail-field">
-          <div class="detail-field-content">
-            <div class="detail-field-label">サービス名</div>
-            <div class="detail-field-value" id="detail-service">-</div>
-          </div>
-        </div>
-
-        <div class="detail-field" id="detail-email-field">
-          <div class="detail-field-content">
-            <div class="detail-field-label">メールアドレス</div>
-            <div class="detail-field-value" id="detail-email">-</div>
-          </div>
-          <button class="btn btn-icon btn-secondary copy-btn" data-field="email" title="コピー">📋</button>
-        </div>
-
-        <div class="detail-field">
-          <div class="detail-field-content">
-            <div class="detail-field-label">ユーザー名</div>
-            <div class="detail-field-value" id="detail-username">-</div>
-          </div>
-          <button class="btn btn-icon btn-secondary copy-btn" data-field="username" title="コピー">📋</button>
-        </div>
-
-        <div class="detail-field">
-          <div class="detail-field-content">
-            <div class="detail-field-label">パスワード</div>
-            <div class="detail-field-value password" id="detail-password">••••••••</div>
-          </div>
-          <button class="btn btn-icon btn-secondary" id="toggle-detail-password" title="表示/非表示">👁</button>
-          <button class="btn btn-icon btn-secondary copy-btn" data-field="password" title="コピー">📋</button>
-        </div>
-
-        <div class="detail-field" id="detail-memo-field">
-          <div class="detail-field-content">
-            <div class="detail-field-label">メモ</div>
-            <div class="detail-field-value" id="detail-memo">-</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="detail-actions">
-        <button class="btn btn-secondary" id="edit-btn" style="flex: 1;">✏️ 編集</button>
-        <button class="btn btn-danger" id="delete-btn" style="flex: 1;">🗑️ 削除</button>
-      </div>
-    </section>
-
-    <!-- パスワード追加/編集画面 -->
-    <section id="edit-screen" class="screen">
-      <div class="header">
-        <button class="back-btn" id="edit-back-btn">←</button>
-        <div>
-          <h1 class="header-title" id="edit-title">パスワードを追加</h1>
-        </div>
-      </div>
-
-      <form class="glass-card" id="edit-form">
+      <form class="glass-card" id="detail-form">
+        <!-- サービス名 -->
         <div class="input-group">
-          <label class="input-label" for="edit-service">サービス名 *</label>
-          <input type="text" id="edit-service" class="input-field" placeholder="例: Google" required>
+          <label class="input-label" for="detail-service">サービス名 *</label>
+          <input type="text" id="detail-service" class="input-field" placeholder="例: Google" required>
         </div>
 
+        <!-- メールアドレス -->
         <div class="input-group">
-          <label class="input-label" for="edit-email">メールアドレス</label>
-          <input type="text" id="edit-email" class="input-field" placeholder="例: user@example.com">
-        </div>
-
-        <div class="input-group">
-          <label class="input-label" for="edit-username">ユーザー名 *</label>
-          <input type="text" id="edit-username" class="input-field" placeholder="例: myusername" required>
-        </div>
-
-        <div class="input-group">
-          <label class="input-label" for="edit-password">パスワード *</label>
+          <label class="input-label" for="detail-email">メールアドレス</label>
           <div class="input-wrapper">
-            <input type="password" id="edit-password" class="input-field" placeholder="パスワード" required>
-            <span class="input-icon" id="toggle-edit-password">👁</span>
+            <input type="text" id="detail-email" class="input-field" placeholder="例: user@example.com">
+            <span class="input-icon copy-btn" data-field="email" title="コピー">📋</span>
           </div>
+        </div>
+
+        <!-- ユーザー名 -->
+        <div class="input-group">
+          <label class="input-label" for="detail-username">ユーザー名 *</label>
+          <div class="input-wrapper">
+            <input type="text" id="detail-username" class="input-field" placeholder="例: myusername" required>
+            <span class="input-icon copy-btn" data-field="username" title="コピー">📋</span>
+          </div>
+        </div>
+
+        <!-- パスワード -->
+        <div class="input-group">
+          <label class="input-label" for="detail-password">パスワード *</label>
+          <div class="input-wrapper">
+            <input type="password" id="detail-password" class="input-field" placeholder="パスワード" required>
+            <span class="input-icon" style="right: 48px;" id="toggle-detail-password">👁</span>
+            <span class="input-icon copy-btn" data-field="password" title="コピー">📋</span>
+          </div>
+
+          <!-- パスワード強度 -->
           <div class="strength-indicator" id="strength-indicator">
             <div class="strength-bar"></div>
             <div class="strength-bar"></div>
@@ -180,21 +133,39 @@
             <div class="strength-bar"></div>
           </div>
           <div class="strength-label" id="strength-label"></div>
+
+          <!-- パスワード生成ボタン (新規時のみ表示) -->
+          <button type="button" class="btn btn-secondary btn-block" id="generate-password-btn"
+            style="margin-top: var(--spacing-sm); margin-bottom: var(--spacing-sm); display: none;">
+            🎲 パスワードを生成
+          </button>
         </div>
 
-        <button type="button" class="btn btn-secondary btn-block" id="generate-password-btn"
-          style="margin-bottom: var(--spacing-md);">
-          🎲 パスワードを生成
+        <!-- カスタムフィールド -->
+        <div id="detail-custom-fields">
+          <!-- カスタムフィールド入力がここに挿入される -->
+        </div>
+
+        <button type="button" class="btn btn-secondary btn-block" id="add-custom-field-btn"
+          style="margin-bottom: var(--spacing-md); border-style: dashed;">
+          ＋ フィールドを追加
         </button>
 
+        <!-- メモ -->
         <div class="input-group">
-          <label class="input-label" for="edit-memo">メモ</label>
-          <textarea id="edit-memo" class="input-field" rows="3" placeholder="任意のメモ"></textarea>
+          <label class="input-label" for="detail-memo">メモ</label>
+          <textarea id="detail-memo" class="input-field" rows="3" placeholder="任意のメモ"></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block" id="save-btn">
-          💾 保存
-        </button>
+        <!-- アクションボタン -->
+        <div class="detail-actions" style="margin-top: var(--spacing-lg);">
+          <button type="submit" class="btn btn-primary" id="save-btn" style="flex: 2;">
+            💾 保存
+          </button>
+          <button type="button" class="btn btn-danger" id="delete-btn" style="flex: 1;">
+            🗑️ 削除
+          </button>
+        </div>
       </form>
     </section>
 
