@@ -232,13 +232,25 @@ const App = {
           <div class="password-service">${this.escapeHtml(p.service)}</div>
           <div class="password-username">${this.escapeHtml(p.username)}</div>
         </div>
+        <button class="btn btn-icon btn-secondary list-copy-btn" title="パスワードをコピー">📋</button>
         <span class="password-arrow">→</span>
       </div>
     `).join('');
 
         // クリックイベントを設定
         listEl.querySelectorAll('.password-item').forEach(item => {
-            item.addEventListener('click', () => this.showDetail(parseInt(item.dataset.id)));
+            const id = parseInt(item.dataset.id);
+
+            item.addEventListener('click', () => this.showDetail(id));
+
+            // コピーボタンのイベント
+            const copyBtn = item.querySelector('.list-copy-btn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.handleCopy('password', id);
+                });
+            }
         });
     },
 
@@ -306,8 +318,9 @@ const App = {
     /**
      * コピー処理
      */
-    async handleCopy(field) {
-        const password = this.passwords.find(p => p.id === this.currentPasswordId);
+    async handleCopy(field, targetId = null) {
+        const id = targetId !== null ? targetId : this.currentPasswordId;
+        const password = this.passwords.find(p => p.id === id);
         if (!password) return;
 
         let value;
