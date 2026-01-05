@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GitHub API CORS Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .success {
+            background: #2d5a27;
+        }
+
+        .error {
+            background: #5a2727;
+        }
+
+        pre {
+            background: #0f0f1a;
+            padding: 10px;
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>GitHub API CORS Test</h1>
+    <p>ブラウザからGitHub APIを直接呼び出せるかテストします。</p>
+
+    <h2>テスト1: 公開リポジトリの読み取り（認証なし）</h2>
+    <div id="test1" class="result">テスト中...</div>
+
+    <h2>テスト2: Contents API（認証なし）</h2>
+    <div id="test2" class="result">テスト中...</div>
+
+    <script>
+        async function runTests() {
+            // テスト1: 公開APIエンドポイント
+            const test1El = document.getElementById('test1');
+            try {
+                const res1 = await fetch('https://api.github.com/repos/octocat/Hello-World', {
+                    headers: {
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+                const data1 = await res1.json();
+                test1El.className = 'result success';
+                test1El.innerHTML = `<strong>成功!</strong> Status: ${res1.status}<br>CORS Headers: ${res1.headers.get('access-control-allow-origin') || 'なし'}<pre>${JSON.stringify(data1, null, 2).slice(0, 500)}...</pre>`;
+            } catch (e) {
+                test1El.className = 'result error';
+                test1El.innerHTML = `<strong>失敗:</strong> ${e.message}`;
+            }
+
+            // テスト2: Contents API（公開リポジトリ）
+            const test2El = document.getElementById('test2');
+            try {
+                const res2 = await fetch('https://api.github.com/repos/octocat/Hello-World/contents/README', {
+                    headers: {
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+                const data2 = await res2.json();
+                test2El.className = 'result success';
+                test2El.innerHTML = `<strong>成功!</strong> Status: ${res2.status}<br>CORS Headers: ${res2.headers.get('access-control-allow-origin') || 'なし'}<pre>${JSON.stringify(data2, null, 2).slice(0, 500)}...</pre>`;
+            } catch (e) {
+                test2El.className = 'result error';
+                test2El.innerHTML = `<strong>失敗:</strong> ${e.message}`;
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+
+</html>

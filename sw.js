@@ -2,7 +2,7 @@
  * Service Worker - オフライン対応
  */
 
-const CACHE_NAME = 'password-manager-v10';
+const CACHE_NAME = 'password-manager-v11';
 const ASSETS = [
     '/',
     '/index.html',

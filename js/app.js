@@ -170,14 +170,25 @@ const App = {
         try {
             const encryptedPasswords = await Storage.getAllPasswords();
             this.passwords = [];
+            const invalidIds = [];
 
             for (const ep of encryptedPasswords) {
                 try {
                     const decrypted = await CryptoUtils.decrypt(ep.ciphertext, ep.iv, this.encryptionKey);
                     this.passwords.push({ id: ep.id, ...decrypted });
                 } catch (error) {
-                    console.error('復号化エラー:', error);
+                    console.error('復号化エラー (削除対象):', error);
+                    invalidIds.push(ep.id);
                 }
+            }
+
+            // 復号できないゴミデータを自動削除
+            if (invalidIds.length > 0) {
+                console.log(`削除対象の破損データ: ${invalidIds.length}件`);
+                for (const id of invalidIds) {
+                    await Storage.deletePassword(id);
+                }
+                this.showToast(`${invalidIds.length}件の破損データを削除しました`, 'warning');
             }
 
             this.renderPasswordList();
@@ -698,7 +709,25 @@ const App = {
                 GitHubSync.REPO_NAME
             );
 
-            // パスワードを復元
+            // パスワードを復元（復号可能なもののみ）
+            let successCount = 0;
+            const validPasswords = [];
+
+            // まず暗号化キーを生成（復号チェック用）
+            // 注意: ここでthis.encryptionKeyが無いとチェックできない
+            // 再ログイン前だが、マスターハッシュ等は更新されている。
+            // しかし、パスワード入力がないとキーは作れない...
+
+            // 修正方針変更:
+            // キーがない状態では復号チェックができない。
+            // したがって、とりあえず全件保存し、「読み込み時（loadPasswords）」に無効なデータを削除するロジックにするか、
+            // あるいは、ユーザーに「クリーンアップボタン」を提供するか。
+
+            // いや、Pullの最後で「再ログイン」させている。
+            // 再ログイン後、loadPasswordsが呼ばれる。
+            // そこで「復号できないデータ」をDBから削除してしまえばいい。
+
+            // ここではそのまま保存するしかない（キーがないから）。
             for (const pw of data.passwords) {
                 await Storage.addPassword(pw);
             }
