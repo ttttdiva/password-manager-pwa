@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キャッシュリセット</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #aaa;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .success {
+            background: rgba(0, 200, 100, 0.2);
+            color: #0f0;
+            display: block;
+        }
+
+        .error {
+            background: rgba(200, 0, 0, 0.2);
+            color: #f00;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>🔄 キャッシュリセット</h1>
+        <p>古いキャッシュが原因でアプリが正常に動作しない場合、このボタンをクリックしてキャッシュを完全にクリアしてください。</p>
+        <button id="reset-btn">キャッシュをクリア</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        document.getElementById('reset-btn').addEventListener('click', async () => {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status';
+            statusEl.textContent = 'クリア中...';
+            statusEl.style.display = 'block';
+
+            try {
+                // 1. Service Worker を解除
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (const registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+
+                // 2. すべてのキャッシュを削除
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    for (const name of cacheNames) {
+                        await caches.delete(name);
+                    }
+                }
+
+                // 3. IndexedDB をクリア（設定のみ、パスワードは残す選択も可能）
+                // ここではIndexedDBはクリアしない（パスワードデータを保護）
+
+                statusEl.className = 'status success';
+                statusEl.innerHTML = '✅ キャッシュをクリアしました！<br><br>3秒後にアプリを再読み込みします...';
+
+                setTimeout(() => {
+                    window.location.href = '/index.html?' + Date.now();
+                }, 3000);
+
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ エラー: ' + error.message;
+            }
+        });
+    </script>
+</body>
+
+</html>

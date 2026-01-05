@@ -1,0 +1,13 @@
+# Exclude data and config
+data/
+config/
+*.json
+!manifest.json
+
+# System files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs
+*.log
